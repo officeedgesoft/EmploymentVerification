@@ -1,0 +1,59 @@
+﻿@{
+    ViewData["Title"] = "Employment Verification";
+}
+
+<div id="app">
+    <h1>Employment Verification</h1>
+    <form id="verificationForm">
+        <label for="employeeId">Employee ID:</label>
+        <input type="number" id="employeeId" name="employeeId" required>
+
+        <label for="companyName">Company Name:</label>
+        <input type="text" id="companyName" name="companyName" required>
+
+        <label for="verificationCode">Verification Code:</label>
+        <input type="text" id="verificationCode" name="verificationCode" required>
+
+        <button type="submit">Verify</button>
+    </form>
+    <p id="verificationResult"></p>
+</div>
+
+<script>
+    document.getElementById('verificationForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const employeeId = document.getElementById('employeeId').value;
+        const companyName = document.getElementById('companyName').value;
+        const verificationCode = document.getElementById('verificationCode').value;
+        try {
+            const response = await fetch('https://localhost:7120/api/verify-employment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ employeeId, companyName, verificationCode })
+            });
+
+            // Handle 400 Bad Request specifically
+            if (response.status === 400) {
+                const errorData = await response.text();
+                console.error("Bad Request:", errorData);
+                document.getElementById('verificationResult').textContent = `Error : ${errorData}`;
+                document.getElementById("verificationResult").style.color = "red";
+                return; // Exit early since we handled the error
+            }
+
+            // Check if the response status is OK (200)
+            if (!response.ok) {
+                // If the response is not ok, throw an error to be caught by the catch block
+                throw new Error(`Server error: ${response.status} - ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            document.getElementById('verificationResult').textContent = result.verified ? "Verified" : "Not Verified";
+            document.getElementById("verificationResult").style.color = result.verified ? "green" : "red";
+        } catch (error) {
+            document.getElementById('verificationResult').textContent = `Error : ${error.message}`;
+            document.getElementById("verificationResult").style.color = "red";
+        }
+    });
+</script>
